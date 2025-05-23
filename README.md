@@ -37,15 +37,21 @@ npm install
 
 ## Con npm
 
+```bash
 npm run dev
+```
 
 ## Con yarn
 
+```bash
 yarn dev
+```
 
 ## Con pnpm
 
+```bash
 pnpm dev
+```
 
 la aplicación se ejecutará en [http://localhost:3000]
 
@@ -55,119 +61,54 @@ construir la aplicación para producción
 
 ## Usando npm
 
+```bash
 npm run build
+```
 
 ## Usando yarn
 
+```bash
 yarn build
+```
 
 ## Usando pnpm
 
+```bash
 pnpm build
+```
 
 ### Iniciando en modo producción
 
 ## npm
 
+```bash
 npm start
+```
 
 ## yarn
 
+```bash
 yarn start
+```
 
 ## pnpm
 
+```bash
 pnpm start
-
-### Ejecución con Docker
-
-## Usando Dockerfile
-
-Crea un archivo `Dockerfile` en la raíz del proyecto:
-
-FROM node:18-alpine AS base
-
-## Instalar dependencias solo cuando sea necesario
-
-FROM base AS deps
-WORKDIR /app
-
-## Copiar archivos de dependencias
-
-COPY package.json package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-## Construir la aplicación
-
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-## Construir la aplicación para producción
-
-RUN npm run build
-
-## Imagen de producción
-
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-
-## Crear usuario no-root
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-## Copiar archivos necesarios
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT 3000
-
-CMD ["node", "server.js"]
-
-### Usando Docker Compose
-
-Crea un archivo `docker-compose.yml` en la raíz del proyecto:
-
-version: '3'
-
-services:
-  yudexminds:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-    restart: always
+```
 
 ### Construir y ejecutar con Docker
 
-## Construir la imagen
+```bash
+# Construir la imagen
+docker build -t yudexminds .
 
-docker build -t mindscape .
+# Ejecutar el contenedor
+docker run -p 3000:3000 yudexminds
 
-## Ejecutar el contenedor
-
-docker run -p 3000:3000 mindscape
-
-## O usando Docker Compose
-
+# O usando Docker Compose
 docker-compose up -d
+```
 
 ### Tecnologías Utilizadas
 
