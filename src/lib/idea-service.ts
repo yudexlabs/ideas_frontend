@@ -1,7 +1,8 @@
 "use server"
 
 import { v4 as uuidv4 } from "uuid"
-import type { Idea, IdeaInput } from "@/lib/types"
+import type { Idea, IdeaInput } from "@/lib/types";
+import { API_URL } from "@/lib/vars";
 
 // Simulación de base de datos en memoria para demostración
 let ideas: Idea[] = [
@@ -33,11 +34,16 @@ let ideas: Idea[] = [
 
 // Obtener todas las ideas
 export async function getAllIdeas(): Promise<Idea[]> {
-  // Simular latencia de red
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  return [...ideas].sort((a, b) => {
-    return new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime()
-  })
+  try {
+    let response = await fetch(`${API_URL}/ideas`);
+    let data = await response.json();
+    if (!data) return [];
+    return data as Idea[];
+  }
+  catch (error) {
+    console.log(error);
+    return [];
+  }
 }
 
 // Obtener una idea por ID
