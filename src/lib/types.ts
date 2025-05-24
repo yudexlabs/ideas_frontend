@@ -14,4 +14,3 @@ export interface Idea {
     status: string
     priority: "alta" | "media" | "baja"
   }
-  
