@@ -15,13 +15,15 @@ interface IdeaFormProps {
   onClose: () => void
   onIdeaAdded: (idea: Idea) => void
   onIdeaUpdated: (idea: Idea) => void
-  idea?: Idea | null
+  idea?: Idea | null,
+  ideas: Idea[]
 }
 
-export function IdeaForm({ onClose, onIdeaAdded, onIdeaUpdated, idea }: IdeaFormProps) {
+export function IdeaForm({ onClose, onIdeaAdded, onIdeaUpdated, idea, ideas }: IdeaFormProps) {
   const [title, setTitle] = useState(idea?.title || "")
   const [description, setDescription] = useState(idea?.description || "")
   const [status, setStatus] = useState(idea?.status || "pendiente")
+  const [priority, setPriority] = useState<"alta" | "media" | "baja">(idea?.priority || "media")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({ title: "", description: "" })
 
@@ -59,13 +61,15 @@ export function IdeaForm({ onClose, onIdeaAdded, onIdeaUpdated, idea }: IdeaForm
           title,
           description,
           status,
-        })
+          priority,
+        }, ideas)
         onIdeaUpdated(updatedIdea)
       } else {
         const newIdea = await createIdea({
           title,
           description,
           status,
+          priority,
         })
         onIdeaAdded(newIdea)
       }
@@ -114,21 +118,39 @@ export function IdeaForm({ onClose, onIdeaAdded, onIdeaUpdated, idea }: IdeaForm
             />
             {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
           </div>
-          <div className="space-y-2">
-            <label htmlFor="status" className="text-sm font-medium text-zinc-400">
-              Estado
-            </label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger id="status" className="bg-zinc-900 border-zinc-800">
-                <SelectValue placeholder="Selecciona un estado" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="en-progreso">En progreso</SelectItem>
-                <SelectItem value="completado">Completado</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="status" className="text-sm font-medium text-zinc-400">
+                Estado
+              </label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id="status" className="bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="Selecciona un estado" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="en-progreso">En progreso</SelectItem>
+                  <SelectItem value="completado">Completado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="priority" className="text-sm font-medium text-zinc-400">
+                Prioridad
+              </label>
+              <Select value={priority} onValueChange={(value: "alta" | "media" | "baja") => setPriority(value)}>
+                <SelectTrigger id="priority" className="bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="Selecciona una prioridad" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="media">Media</SelectItem>
+                  <SelectItem value="baja">Baja</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"
