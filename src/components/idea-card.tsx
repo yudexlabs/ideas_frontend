@@ -3,11 +3,19 @@
 import { useState } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { MoreHorizontalIcon, EditIcon, TrashIcon, AlertTriangleIcon, MinusIcon, ArrowDownIcon } from "lucide-react"
+import {
+  MoreHorizontalIcon,
+  EditIcon,
+  TrashIcon,
+  AlertTriangleIcon,
+  MinusIcon,
+  ArrowDownIcon,
+  ChevronDownIcon,
+} from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { deleteIdea, updateIdeaStatus } from "@/lib/idea-service"
+import { deleteIdea, updateIdea } from "@/lib/idea-service"
 import type { Idea } from "@/lib/types"
 
 interface IdeaCardProps {
@@ -20,7 +28,8 @@ interface IdeaCardProps {
 
 export function IdeaCard({ idea, onEdit, onDelete, onStatusChange, ideas }: IdeaCardProps) {
   const [isDeleting, setIsDeleting] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false)
 
   const handleDelete = async () => {
     if (confirm("¿Estás seguro de que quieres eliminar esta idea?")) {
@@ -36,17 +45,29 @@ export function IdeaCard({ idea, onEdit, onDelete, onStatusChange, ideas }: Idea
     }
   }
 
-  const handleStatusChange = async () => {
-    setIsUpdating(true)
+  const handleStatusChange = async (newStatus: string) => {
+    setIsUpdatingStatus(true)
     try {
-      const newStatus = idea.status === "pendiente" ? "completado" : "pendiente"
       const updatedIdea = { ...idea, status: newStatus }
-      await updateIdeaStatus(idea.id, newStatus, ideas)
+      await updateIdea(updatedIdea, ideas)
       onStatusChange(updatedIdea)
     } catch (error) {
       console.error("Error updating status:", error)
     } finally {
-      setIsUpdating(false)
+      setIsUpdatingStatus(false)
+    }
+  }
+
+  const handlePriorityChange = async (newPriority: "alta" | "media" | "baja") => {
+    setIsUpdatingPriority(true)
+    try {
+      const updatedIdea = { ...idea, priority: newPriority }
+      await updateIdea(updatedIdea, ideas)
+      onStatusChange(updatedIdea)
+    } catch (error) {
+      console.error("Error updating priority:", error)
+    } finally {
+      setIsUpdatingPriority(false)
     }
   }
 
@@ -66,13 +87,26 @@ export function IdeaCard({ idea, onEdit, onDelete, onStatusChange, ideas }: Idea
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "alta":
-        return "text-red-400 bg-red-950/30 border-red-900"
+        return "text-red-400 bg-red-950/30 border-red-900 hover:bg-red-900/50"
       case "media":
-        return "text-yellow-400 bg-yellow-950/30 border-yellow-900"
+        return "text-yellow-400 bg-yellow-950/30 border-yellow-900 hover:bg-yellow-900/50"
       case "baja":
-        return "text-green-400 bg-green-950/30 border-green-900"
+        return "text-green-400 bg-green-950/30 border-green-900 hover:bg-green-900/50"
       default:
-        return "text-zinc-400 bg-zinc-900 border-zinc-800"
+        return "text-zinc-400 bg-zinc-900 border-zinc-800 hover:bg-zinc-800"
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pendiente":
+        return "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800"
+      case "en-progreso":
+        return "bg-blue-950/30 text-blue-400 border-blue-900 hover:bg-blue-900/50"
+      case "completado":
+        return "bg-teal-950/30 text-teal-400 border-teal-900 hover:bg-teal-900/50"
+      default:
+        return "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800"
     }
   }
 
@@ -86,10 +120,44 @@ export function IdeaCard({ idea, onEdit, onDelete, onStatusChange, ideas }: Idea
         <div className="flex-1">
           <CardTitle className="text-lg font-medium mb-2">{idea.title}</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className={`text-xs px-2 py-0 h-6 ${getPriorityColor(idea.priority)}`}>
-              {getPriorityIcon(idea.priority)}
-              <span className="ml-1 capitalize">{idea.priority}</span>
-            </Button>
+            {/* Dropdown para cambiar prioridad */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`text-xs px-2 py-0 h-6 transition-colors cursor-pointer ${getPriorityColor(idea.priority)}`}
+                  disabled={isUpdatingPriority}
+                >
+                  {getPriorityIcon(idea.priority)}
+                  <span className="ml-1 capitalize">{isUpdatingPriority ? "..." : idea.priority}</span>
+                  <ChevronDownIcon className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800">
+                <DropdownMenuItem
+                  className="cursor-pointer flex items-center text-red-400 hover:text-red-300"
+                  onClick={() => handlePriorityChange("alta")}
+                >
+                  <AlertTriangleIcon className="mr-2 h-3 w-3" />
+                  Alta
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer flex items-center text-yellow-400 hover:text-yellow-300"
+                  onClick={() => handlePriorityChange("media")}
+                >
+                  <MinusIcon className="mr-2 h-3 w-3" />
+                  Media
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer flex items-center text-green-400 hover:text-green-300"
+                  onClick={() => handlePriorityChange("baja")}
+                >
+                  <ArrowDownIcon className="mr-2 h-3 w-3" />
+                  Baja
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <DropdownMenu>
@@ -123,20 +191,43 @@ export function IdeaCard({ idea, onEdit, onDelete, onStatusChange, ideas }: Idea
       </CardContent>
       <CardFooter className="flex justify-between pt-2">
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`text-xs px-2 py-0 h-6 ${idea.status === "pendiente"
-              ? "bg-zinc-900 text-zinc-400 border-zinc-800"
-              : idea.status === "en_progreso"
-                ? "bg-blue-950/30 text-blue-400 border-blue-900"
-                : "bg-teal-950/30 text-teal-400 border-teal-900"
-              }`}
-            onClick={handleStatusChange}
-            disabled={isUpdating}
-          >
-            {isUpdating ? "Actualizando..." : idea.status}
-          </Button>
+          {/* Dropdown para cambiar estado */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`text-xs px-2 py-0 h-6 transition-colors cursor-pointer ${getStatusColor(idea.status)}`}
+                disabled={isUpdatingStatus}
+              >
+                {isUpdatingStatus ? "Actualizando..." : idea.status}
+                <ChevronDownIcon className="h-3 w-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800">
+              <DropdownMenuItem
+                className="cursor-pointer flex items-center text-zinc-400 hover:text-white"
+                onClick={() => handleStatusChange("pendiente")}
+              >
+                <div className="w-2 h-2 rounded-full bg-zinc-500 mr-2"></div>
+                Pendiente
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer flex items-center text-blue-400 hover:text-blue-300"
+                onClick={() => handleStatusChange("en-progreso")}
+              >
+                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                En progreso
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer flex items-center text-teal-400 hover:text-teal-300"
+                onClick={() => handleStatusChange("completado")}
+              >
+                <div className="w-2 h-2 rounded-full bg-teal-500 mr-2"></div>
+                Completado
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <span className="text-xs text-zinc-500">{formattedDate}</span>
         </div>
       </CardFooter>
