@@ -7,7 +7,14 @@ import { API_URL } from "@/lib/vars";
 export async function getAllIdeas(
 ): Promise<Idea[]> {
   try {
-    let response = await fetch(`${API_URL}/ideas`);
+    const token = await getToken();
+    console.log(token)
+    
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
+    let response = await fetch(`${API_URL}/ideas`, {headers: headers});
     let data = await response.json();
     if (!data) return [];
     return data as Idea[];
@@ -20,7 +27,12 @@ export async function getAllIdeas(
 // Obtener una idea por ID
 export async function getIdeaById(id: string): Promise<Idea | null> {
   try {
-    const response = await fetch(`${API_URL}/ideas/${id}`);
+    const token = await getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
+    const response = await fetch(`${API_URL}/ideas/${id}`, {headers: headers});
     const data = await response.json();
     if (!data) return null;
     return data as Idea;
@@ -43,11 +55,14 @@ export async function createIdea(ideaInput: IdeaInput): Promise<Idea> {
     created_at: new Date().toISOString(),
   }
   try {
+    const token = await getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
     await fetch(`${API_URL}/ideas`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: headers,
       body: JSON.stringify(newIdea),
     });
     return newIdea;
@@ -73,11 +88,14 @@ export async function updateIdea(idea: Idea, ideas: Idea[]): Promise<Idea> {
   }
 
   try {
+    const token = await getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
     await fetch(`${API_URL}/ideas/${idea.id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: headers,
       body: JSON.stringify(idea),
     });
     return ideas[index]
@@ -100,11 +118,14 @@ export async function updateIdeaStatus(id: string, status: string, ideas: Idea[]
   }
 
   try {
+    const token = await getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
     await fetch(`${API_URL}/ideas/change_status/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: headers,
       body: JSON.stringify({ status }),
     });
     return ideas[index]
@@ -117,11 +138,48 @@ export async function updateIdeaStatus(id: string, status: string, ideas: Idea[]
 // Eliminar una idea
 export async function deleteIdea(id: string, ideas: Idea[]): Promise<void> {
   try {
+    const token = await getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
     await fetch(`${API_URL}/ideas/${id}`, {
       method: "DELETE",
+      headers: headers,
     });
     ideas = ideas.filter((idea) => idea.id !== id)
   } catch (error) {
     console.log(error);
+  }
+}
+
+
+export async function getToken(): Promise<string | null> {
+  const username = process.env.API_USERNAME;
+  const password = process.env.API_PASSWORD;
+
+  const formData = new URLSearchParams();
+  formData.append("username", username ?? "");
+  formData.append("password", password ?? "");
+
+  try {
+    const response = await fetch(`${API_URL}/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+    });
+
+    if (!response.ok) {
+      console.error("Error al obtener el token");
+      return null;
+    }
+
+    const data = await response.json();
+    return data?.access_token;
+  } catch (error) {
+    console.error("Error en la solicitud de token:", error);
+    return null;
   }
 }

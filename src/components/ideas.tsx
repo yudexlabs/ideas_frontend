@@ -37,7 +37,7 @@ export function Ideas() {
   const sortIdeas = (ideas: Idea[], sortBy: "priority" | "status" | "date"): Idea[] => {
     const priorityOrder = { alta: 3, media: 2, baja: 1 }
     const statusOrder = { pendiente: 1, "en-progreso": 2, completado: 3 }
-
+    if(ideas.length === 0) return []
     return [...ideas].sort((a, b) => {
       switch (sortBy) {
         case "priority":
@@ -54,7 +54,7 @@ export function Ideas() {
   // Función para filtrar ideas por búsqueda
   const filterIdeas = (ideas: Idea[], searchTerm: string): Idea[] => {
     if (!searchTerm.trim()) return ideas
-
+    if(ideas.length === 0) return []
     const term = searchTerm.toLowerCase()
     return ideas.filter(
       (idea) => idea.title.toLowerCase().includes(term) || idea.description.toLowerCase().includes(term),
@@ -158,16 +158,28 @@ export function Ideas() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredAndSortedIdeas.map((idea) => (
-            <IdeaCard
-              key={idea.id}
-              idea={idea}
-              onEdit={handleEditIdea}
-              onDelete={handleDeleteIdea}
-              onStatusChange={handleUpdateIdea}
-              ideas={allIdeas}
-            />
-          ))}
+          {
+            filteredAndSortedIdeas.length > 0 ?
+              filteredAndSortedIdeas
+                .map((idea) => (
+                  <IdeaCard
+                    key={idea.id}
+                    idea={idea}
+                    onEdit={handleEditIdea}
+                    onDelete={handleDeleteIdea}
+                    onStatusChange={handleUpdateIdea}
+                    ideas={allIdeas}
+                  />
+                )) :
+              (
+                <div className="border border-zinc-800 rounded-lg p-8 text-center">
+                  <p className="text-zinc-500">
+                    {searchTerm
+                      ? "No se encontraron ideas que coincidan con tu búsqueda."
+                      : "No tienes ideas guardadas. Crea tu primera idea."}
+                  </p>
+                </div>
+              )}
         </div>
       )}
     </div>
